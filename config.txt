@@ -1,0 +1,8 @@
+FILE_NAME:excel_file_name.xlsx
+SHEET_NAME:excel_sheet_name1,excel_sheet_name2
+INDEX_BEFORE:index_before
+INDEX_AFTER:index_after
+CLIENT_ID:your_client_id
+CLIENT_SECRET:your_client_secret
+SOURCE_LANG:en
+TARGET_LANG:ko
