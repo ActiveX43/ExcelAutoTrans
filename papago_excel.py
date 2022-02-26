@@ -1,6 +1,7 @@
 import os
 import sys
 import urllib.request
+import json
 import pandas as pd
 
 def init_request(client_id, client_secret):
@@ -18,7 +19,8 @@ def get_papago(request, source, source_lang, target_lang):
             rescode = response.getcode()
             if (rescode == 200):
                 response_body = response.read()
-                return response_body.decode('utf-8')
+                res = json.loads(response_body.decode('utf-8'))
+                return res['message']['result']['translatedText']
             else:
                 print("Error Code:" + rescode)
                 return None
@@ -72,21 +74,22 @@ try:
                     exit()
                 else:
                     for i in xlsx.index:
+                        if not pd.isnull(xlsx.loc[i, config['INDEX_AFTER']]):
+                            continue
                         data_before = xlsx.loc[i, config['INDEX_BEFORE']]
-                        response = get_papago(request, data_before, 
+                        data_after = get_papago(request, data_before, 
                                 config["SOURCE_LANG"], config['TARGET_LANG'])
-                        if response is None:
+                        if data_after is None:
                             print("Operation Interrupted due to Server Error")
                             xlsx.to_excel(f"{config['FILE_NAME'][:-5]}_translated.xlsx")
                             exit()
                         else:
-                            data_after = response['message']['result']['translatedText']
                             xlsx.loc[i, config['INDEX_AFTER']] = data_after
             except ValueError:
                 print("Error: No such sheet")
                 exit()
 
-        xlsx.to_excel(f"{config['FILE_NAME'][:-5]}_translated.xlsx")
+        xlsx.to_excel(f"{config['FILE_NAME'][:-5]}_translated.xlsx", index=False)
 
 except FileNotFoundError:
     print("Error: No such file")
