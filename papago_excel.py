@@ -3,22 +3,18 @@ import sys
 import urllib.request
 import pandas as pd
 
-def init_request(client_id, client_secret):
-    url = "https://openapi.naver.com/v1/papago/n2mt"
+def get_papago(source, source_lang, target_lang):
+    url = "https://papago.naver.com/apis/dictionary/search"
     request = urllib.request.Request(url)
-    request.add_header("X-Naver-Client-Id", client_id)
-    request.add_header("X-Naver-Client-Secret", client_secret)
-    return request
-
-def get_papago(request, source, source_lang, target_lang):
     encText = urllib.parse.quote(source)
-    data = f"source={source_lang}&target={target_lang}&text=" + encText
+    data = f"source={source_lang}&target={target_lang}&text={encText}&locale=en"
     try:
         with urllib.request.urlopen(request, data=data.encode("utf-8")) as response:
             rescode = response.getcode()
             if (rescode == 200):
-                response_body = response.read()
-                return response_body.decode('utf-8')
+                response_body = response.read().decode('utf-8')
+                print(response_body)
+                return response_body
             else:
                 print("Error Code:" + rescode)
                 return None
@@ -57,8 +53,6 @@ if not config['FILE_NAME'].endswith(".xlsx"):
     print("Error: inappropriate excel file name")
     exit()
 
-request = init_request(config['CLIENT_ID'], config['CLIENT_SECRET'])
-
 try:
     with pd.ExcelFile(config['FILE_NAME']) as reader:
         for s in config["SHEET_NAME"]:
@@ -72,15 +66,17 @@ try:
                     exit()
                 else:
                     for i in xlsx.index:
+                        if not xlsx.loc[i, config['INDEX_AFTER']]:
+                            continue
                         data_before = xlsx.loc[i, config['INDEX_BEFORE']]
-                        response = get_papago(request, data_before, 
+                        response = get_papago(data_before, 
                                 config["SOURCE_LANG"], config['TARGET_LANG'])
                         if response is None:
                             print("Operation Interrupted due to Server Error")
                             xlsx.to_excel(f"{config['FILE_NAME'][:-5]}_translated.xlsx")
                             exit()
                         else:
-                            data_after = response['message']['result']['translatedText']
+                            data_after = response
                             xlsx.loc[i, config['INDEX_AFTER']] = data_after
             except ValueError:
                 print("Error: No such sheet")
